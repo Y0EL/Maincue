@@ -9,6 +9,10 @@ import urllib.request
 import json
 import base64
 import uuid
+from dotenv import load_dotenv
+
+load_dotenv()
+
 
 app = FastAPI(title="maincue.id API")
 
@@ -21,7 +25,8 @@ app.add_middleware(
 )
 
 DB_FILE = "billiard_local.db"
-XENDIT_API_KEY = "xnd_development_YCsEcMRJs5Ci5XU2BRxmvD2ELE8sOzjXeqS1aIPUvx9zgcOXhn0sBE39IyJ9i"
+XENDIT_API_KEY = os.getenv("XENDIT_API_KEY")
+
 
 def init_db():
     conn = sqlite3.connect(DB_FILE)
