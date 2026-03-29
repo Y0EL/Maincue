@@ -588,90 +588,84 @@ export default function AdminPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F5F4F1] font-sans">
-
-      {/* ── DESKTOP LAYOUT: Sidebar + Content ─────────────────────────── */}
-      <div className="hidden md:flex min-h-screen">
-        {/* Sidebar */}
-        <aside className="w-60 bg-[#2A2421] flex flex-col fixed top-0 left-0 h-screen z-40">
-          <div className="p-6 border-b border-white/10">
-            <h1 className="text-lg font-light text-white tracking-tight">Panel Admin</h1>
-            <p className="text-[9px] text-[#D4C4B7]/60 uppercase tracking-widest mt-0.5">Pusat Komando</p>
-          </div>
-          <nav className="flex-1 p-4 space-y-1">
-            {NAV.map(item => (
-              <button key={item.id} onClick={() => setActiveTab(item.id)}
-                className={cn(
-                  "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left text-sm transition-all",
-                  activeTab === item.id
-                    ? "bg-white/15 text-white font-medium"
-                    : "text-[#D4C4B7]/60 hover:bg-white/8 hover:text-[#D4C4B7]"
-                )}>
-                <item.icon size={16} />
-                {item.label}
-              </button>
-            ))}
-          </nav>
-          <div className="p-4 border-t border-white/10">
-            <div className="bg-white/10 rounded-xl p-3 mb-3">
-              <p className="text-[9px] text-[#D4C4B7]/60 uppercase tracking-widest mb-1">Total Pendapatan</p>
-              <p className="text-sm font-light text-white">Rp {(stats.revenue || 0).toLocaleString('id-ID')}</p>
-            </div>
-            <button onClick={() => { setAdminToken(""); localStorage.removeItem("billiard_admin"); }}
-              className="w-full flex items-center gap-3 px-4 py-3 text-[#D4C4B7]/60 hover:text-white text-sm transition-colors">
-              <LogOut size={16} /> Keluar
-            </button>
-          </div>
-        </aside>
-
-        {/* Desktop Content */}
-        <main className="ml-60 flex-1 p-8 max-w-3xl">
-          <div className="mb-8">
-            <h2 className="text-3xl font-light text-[#2A2421] capitalize">{NAV.find(n => n.id === activeTab)?.label}</h2>
-          </div>
-          {renderPage()}
-        </main>
-      </div>
-
-      {/* ── MOBILE LAYOUT: Header + Content + Bottom Nav ──────────────── */}
-      <div className="md:hidden flex flex-col h-screen overflow-hidden">
-        {/* Mobile Header */}
-        <header className="bg-white px-6 py-5 border-b border-[#D4C4B7] flex flex-shrink-0 justify-between items-center z-30">
-          <div>
-            <h1 className="text-base font-medium text-[#2A2421]">{NAV.find(n => n.id === activeTab)?.label || "Panel Admin"}</h1>
-            <p className="text-[9px] text-[#8B8580] uppercase tracking-widest font-bold mt-0.5">Pusat Komando</p>
-          </div>
-          <button onClick={() => { setAdminToken(""); localStorage.removeItem("billiard_admin"); }}
-            className="w-10 h-10 bg-[#F5F4F1] border border-[#D4C4B7] text-[#8B7355] rounded-full flex items-center justify-center active:scale-90 transition-transform">
-            <LogOut size={16} />
-          </button>
-        </header>
-
-        {/* Mobile Page Content */}
-        <main className="flex-1 overflow-y-auto scrollbar-hide p-5 pb-24">
-          {renderPage()}
-        </main>
-
-        {/* Mobile Bottom Navigation (Matching Home screen style) */}
-        <nav className="fixed bottom-0 left-0 right-0 h-20 bg-white border-t border-[#D4C4B7]/40 z-30 flex items-center justify-around px-2 pb-2">
+    <div className="h-screen bg-[#F5F4F1] font-sans flex flex-col md:flex-row overflow-hidden">
+      
+      {/* ── DESKTOP SIDEBAR: Only visible on md+ ── */}
+      <aside className="hidden md:flex w-64 h-full flex-col bg-[#2A2421] flex-shrink-0 z-40">
+        <div className="p-8 border-b border-white/10">
+          <h1 className="text-xl font-light text-white tracking-tight">Panel Admin</h1>
+          <p className="text-[10px] text-[#D4C4B7]/60 uppercase tracking-widest mt-0.5 font-bold">Pusat Komando</p>
+        </div>
+        <nav className="flex-1 p-4 space-y-1 mt-4">
           {NAV.map(item => (
             <button key={item.id} onClick={() => setActiveTab(item.id)}
               className={cn(
-                "flex-1 flex flex-col items-center justify-center gap-1 transition-all",
-                activeTab === item.id ? "text-[#2A2421]" : "text-[#B8B0AA]"
+                "w-full flex items-center gap-3 px-5 py-4 rounded-2xl text-left text-sm transition-all",
+                activeTab === item.id 
+                  ? "bg-white/15 text-white font-medium" 
+                  : "text-[#D4C4B7]/50 hover:bg-white/5 hover:text-[#D4C4B7]"
               )}>
-              <div className={cn(
-                "p-2 rounded-xl transition-all",
-                activeTab === item.id ? "bg-[#2A2421]/5" : ""
-              )}>
-                <item.icon size={18} strokeWidth={activeTab === item.id ? 2 : 1.5} />
-              </div>
-              <span className="text-[8px] uppercase tracking-[0.1em] font-bold">{item.label}</span>
+              <item.icon size={18} strokeWidth={activeTab === item.id ? 2 : 1.5} />
+              {item.label}
             </button>
           ))}
         </nav>
-      </div>
+        <div className="p-4 border-t border-white/10">
+          <div className="bg-white/5 rounded-2xl p-4 mb-4">
+            <p className="text-[10px] text-[#D4C4B7]/40 uppercase tracking-widest mb-1 font-bold">Total Pendapatan</p>
+            <p className="text-lg font-light text-white">Rp {(stats.revenue || 0).toLocaleString('id-ID')}</p>
+          </div>
+          <button onClick={() => { setAdminToken(""); localStorage.removeItem("billiard_admin"); }}
+            className="w-full flex items-center gap-3 px-5 py-4 text-[#D4C4B7]/50 hover:text-white text-sm transition-colors mb-2">
+            <LogOut size={18} /> Keluar
+          </button>
+        </div>
+      </aside>
+
+      {/* ── MOBILE HEADER: Only visible on small Screens ── */}
+      <header className="md:hidden bg-white px-6 py-5 border-b border-[#D4C4B7] flex flex-shrink-0 justify-between items-center z-30">
+        <div>
+          <h1 className="text-base font-medium text-[#2A2421]">{NAV.find(n => n.id === activeTab)?.label || "Panel Admin"}</h1>
+          <p className="text-[9px] text-[#8B8580] uppercase tracking-widest font-bold mt-0.5">Pusat Komando</p>
+        </div>
+        <button onClick={() => { setAdminToken(""); localStorage.removeItem("billiard_admin"); }}
+          className="w-10 h-10 bg-[#F5F4F1] border border-[#D4C4B7] text-[#8B7355] rounded-full flex items-center justify-center active:scale-90 transition-transform">
+          <LogOut size={16} />
+        </button>
+      </header>
+
+      {/* ── MAIN SCROLLABLE CONTENT AREA: Shared by both Mobile & Desktop ── */}
+      <main className="flex-1 h-full overflow-y-auto overflow-x-hidden p-6 md:p-12 scrollbar-hide pb-32 md:pb-12 bg-[#F5F4F1]">
+        {/* Desktop-only page title */}
+        <div className="hidden md:block mb-10">
+          <h2 className="text-4xl font-light text-[#2A2421] capitalize tracking-tight">{NAV.find(n => n.id === activeTab)?.label}</h2>
+        </div>
+        
+        <div className="max-w-4xl mx-auto md:mx-0">
+          {renderPage()}
+        </div>
+      </main>
+
+      {/* ── MOBILE BOTTOM NAV: Only visible on small screens ── */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 h-20 bg-white border-t border-[#D4C4B7]/40 z-30 flex items-center justify-around px-2 pb-2 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+        {NAV.map(item => (
+          <button key={item.id} onClick={() => setActiveTab(item.id)}
+            className={cn(
+              "flex-1 flex flex-col items-center justify-center gap-1 transition-all",
+              activeTab === item.id ? "text-[#2A2421]" : "text-[#B8B0AA]"
+            )}>
+            <div className={cn(
+              "p-2 rounded-xl transition-all",
+              activeTab === item.id ? "bg-[#2A2421]/5" : ""
+            )}>
+              <item.icon size={18} strokeWidth={activeTab === item.id ? 2 : 1.5} />
+            </div>
+            <span className="text-[8px] uppercase tracking-[0.1em] font-bold">{item.label}</span>
+          </button>
+        ))}
+      </nav>
 
     </div>
   );
 }
+
