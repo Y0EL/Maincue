@@ -5,7 +5,7 @@ import { CircleDot, RefreshCw } from "lucide-react";
 import { useEffect, useState } from "react";
 import { cn } from "./Common";
 
-const API_URL = "http://localhost:8000";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 interface TableType {
   id: number;
@@ -38,7 +38,7 @@ export default function TablesTab() {
     if (cached) setTables(JSON.parse(cached));
     fetchTables();
 
-    const ws = new WebSocket("ws://localhost:8000/ws");
+    const ws = new WebSocket(process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8000/ws");
     ws.onmessage = (event) => {
       if (event.data === "tables_updated") {
         fetchTables();
@@ -51,8 +51,8 @@ export default function TablesTab() {
     <div className="space-y-6 pt-4 pb-24 px-2">
       <div className="flex justify-between items-end mb-8">
         <div>
-           <h2 className="text-3xl font-light text-[#2A2421] tracking-tight">Tables</h2>
-           <p className="text-[10px] text-[#8B8580] uppercase tracking-[0.2em] mt-1">Live Status</p>
+           <h2 className="text-3xl font-light text-[#2A2421] tracking-tight">Daftar Meja</h2>
+           <p className="text-[10px] text-[#8B8580] uppercase tracking-[0.2em] mt-1">Status Langsung</p>
         </div>
         <button onClick={fetchTables} className="text-[#8B8580] hover:text-[#2A2421] transition-colors p-2">
            <RefreshCw size={16} strokeWidth={1.5} className={cn(loading && "animate-spin")} />

@@ -10,7 +10,7 @@ export default function EventsTab() {
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
 
   useEffect(() => {
-    fetch("http://localhost:8000/events")
+    fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/events`)
       .then(res => res.json())
       .then(data => {
         setEvents(data);
@@ -26,15 +26,15 @@ export default function EventsTab() {
     <>
     <div className="space-y-12 pt-10 pb-24 mx-2">
       <div className="mb-8">
-         <h2 className="text-3xl font-light text-[#2A2421] tracking-tight">Events</h2>
-         <p className="text-[10px] text-[#8B8580] uppercase tracking-[0.2em] mt-2">Upcoming Tournaments</p>
+         <h2 className="text-3xl font-light text-[#2A2421] tracking-tight">Acara</h2>
+         <p className="text-[10px] text-[#8B8580] uppercase tracking-[0.2em] mt-2">Turnamen Mendatang</p>
       </div>
       
       <div className="space-y-6">
         {loading ? (
-          <p className="text-xs text-[#8B8580] text-center italic mt-10">Loading events...</p>
+          <p className="text-xs text-[#8B8580] text-center italic mt-10">Memuat acara...</p>
         ) : events.length === 0 ? (
-          <p className="text-xs text-[#8B8580] text-center italic mt-10">There are no upcoming events at this time.</p>
+          <p className="text-xs text-[#8B8580] text-center italic mt-10">Tidak ada acara mendatang saat ini.</p>
         ) : (
           events.map((e, idx) => (
             <motion.div 
@@ -46,7 +46,7 @@ export default function EventsTab() {
             >
                <div className="absolute right-0 top-0 w-32 h-32 bg-gradient-to-br from-[#8B7355]/10 to-transparent opacity-50 transition-opacity group-hover:opacity-100" />
                <div className="relative z-10 w-full">
-                  <span className="text-[10px] font-medium tracking-[0.2em] text-[#8B7355] uppercase block mb-3">Community Event</span>
+                  <span className="text-[10px] font-medium tracking-[0.2em] text-[#8B7355] uppercase block mb-3">Acara Komunitas</span>
                   <h3 className="text-xl font-light text-[#2A2421] mb-2">{e.title}</h3>
                   <p className="text-xs font-light text-[#8B8580] mb-6 leading-relaxed line-clamp-2">{e.description}</p>
                   

@@ -9,7 +9,7 @@ export default function ProfileTab({ userId, onLogout }: { userId: number, onLog
     const userStr = localStorage.getItem("billiard_user");
     const token = userStr ? JSON.parse(userStr).token : "";
 
-    fetch(`http://localhost:8000/user/${userId}`, {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/user/${userId}`, {
       headers: {
         "Authorization": `Bearer ${token}`
       }
@@ -38,20 +38,20 @@ export default function ProfileTab({ userId, onLogout }: { userId: number, onLog
          </div>
          
          <div>
-            <h2 className="text-3xl font-light text-[#2A2421] tracking-tight">{user?.name ? user.name : 'Not Authenticated'}</h2>
-            <p className="text-[10px] uppercase tracking-[0.2em] font-medium text-[#8B8580] mt-2">Member</p>
+            <h2 className="text-3xl font-light text-[#2A2421] tracking-tight">{user?.name ? user.name : 'Tidak Terotentikasi'}</h2>
+            <p className="text-[10px] uppercase tracking-[0.2em] font-medium text-[#8B8580] mt-2">Anggota</p>
          </div>
       </div>
 
       <div className="pt-12 border-t border-[#D4C4B7]/30 space-y-8">
-         <span className="text-[10px] font-medium text-[#8B8580] uppercase tracking-[0.2em] block text-center">Settings</span>
+         <span className="text-[10px] font-medium text-[#8B8580] uppercase tracking-[0.2em] block text-center">Pengaturan</span>
          
          <div className="flex justify-center">
             <button 
               onClick={onLogout} 
               className="px-8 py-4 border border-[#2A2421] text-[#2A2421] hover:bg-[#2A2421] hover:text-white transition-colors duration-300 rounded-[1.5rem] uppercase tracking-[0.2em] text-[10px] font-medium"
             >
-               Sign Out
+               Keluar Akun
             </button>
          </div>
       </div>

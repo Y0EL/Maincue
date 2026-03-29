@@ -6,7 +6,7 @@ import { useState, useEffect } from "react";
 import { cn } from "./Common";
 import { useModal } from "./ModalProvider";
 
-const API_URL = "http://localhost:8000";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 export default function BookingsTab({ userId }: { userId: number }) {
   const [duration, setDuration] = useState(1);
@@ -22,7 +22,7 @@ export default function BookingsTab({ userId }: { userId: number }) {
   useEffect(() => {
     fetchTables();
 
-    const ws = new WebSocket("ws://localhost:8000/ws");
+    const ws = new WebSocket(process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8000/ws");
     ws.onmessage = (event) => {
       if (event.data === "tables_updated") {
         fetchTables();
@@ -91,11 +91,10 @@ export default function BookingsTab({ userId }: { userId: number }) {
         setLoading(false);
         const errData = await res.json();
         showModal({
-            title: "Booking Failed",
-            message: errData.detail || "Unable to process your reservation.",
-            type: "error"
-        });
-        return;
+            title: "Pembayaran Berhasil!",
+            message: "Tiket telah ditambahkan ke beranda Anda.",
+            type: "success"
+        });    return;
       }
       const data = await res.json();
       setPaymentData(data);
@@ -103,8 +102,8 @@ export default function BookingsTab({ userId }: { userId: number }) {
     } catch(e) {
       setLoading(false);
       showModal({
-          title: "Connection Error",
-          message: "Please check your network and try again.",
+          title: "Kesalahan Koneksi",
+          message: "Silakan periksa jaringan Anda dan coba lagi.",
           type: "error"
       });
     }
@@ -117,9 +116,10 @@ export default function BookingsTab({ userId }: { userId: number }) {
             <span className="text-2xl font-light">✓</span>
         </div>
         <div>
-          <h2 className="text-3xl font-light text-[#2A2421] tracking-tight mb-4">Payment Success</h2>
+           <h2 className="text-3xl font-light text-[#2A2421] tracking-tight holographic-text">Selesaikan<br/>Reservasi</h2>
+           <p className="text-[10px] text-[#8B8580] uppercase tracking-[0.2em] mt-2">Pilih Meja, Bayar Langsung</p>
           <p className="text-xs text-[#8B8580] uppercase tracking-[0.2em] leading-relaxed">
-             Go to <strong className="text-[#8B7355]">Home Tab</strong> to view your Ticket & QR Code.
+             Buka <strong className="text-[#8B7355]">Tab Beranda</strong> untuk melihat Tiket & QR Code Anda.
           </p>
         </div>
       </div>
@@ -131,7 +131,7 @@ export default function BookingsTab({ userId }: { userId: number }) {
     return (
       <div className="flex flex-col items-center justify-center pt-24 pb-20 h-full text-center space-y-8 px-8">
         <div>
-           <p className="text-[10px] uppercase font-medium tracking-[0.2em] text-[#8B8580] mb-2">Total Amount</p>
+           <p className="text-[10px] uppercase font-medium tracking-[0.2em] text-[#8B8580] mb-2">Total Pembayaran</p>
            <h2 className="text-4xl font-light text-[#2A2421]">Rp {paymentData.amount.toLocaleString('id-ID')}</h2>
         </div>
         
@@ -140,7 +140,7 @@ export default function BookingsTab({ userId }: { userId: number }) {
         </div>
         
         <p className="text-[10px] uppercase tracking-[0.2em] text-[#8B7355] font-medium flex items-center gap-3 animate-pulse">
-           <Loader2 size={12} className="animate-spin" /> Awaiting Payment
+           <Loader2 size={12} className="animate-spin" /> Menunggu Pembayaran
         </p>
 
         <div className="flex flex-col gap-6 mt-8 w-full max-w-[200px]">
@@ -153,12 +153,9 @@ export default function BookingsTab({ userId }: { userId: number }) {
              Test Bypass Paid
            </button>
 
-           <button 
-             onClick={() => setPaymentData(null)}
-             className="mx-auto block text-xs uppercase tracking-widest font-medium text-[#8B8580] hover:text-[#2A2421] transition-colors border-b border-transparent hover:border-[#2A2421]"
-           >
-             Cancel Order
-           </button>
+           <button onClick={() => setPaymentData(null)} className="w-full py-4 bg-transparent border border-[#2A2421] text-[#2A2421] rounded-2xl text-[11px] uppercase tracking-[0.2em] font-medium hover:bg-[#F5F4F1] transition-colors outline-none">
+                  Batal Pesan
+                </button>
         </div>
       </div>
     );
@@ -167,14 +164,14 @@ export default function BookingsTab({ userId }: { userId: number }) {
   return (
     <div className="space-y-12 pt-10 pb-24 mx-2">
       <div className="mb-8">
-         <h2 className="text-3xl font-light text-[#2A2421] tracking-tight">Reservation</h2>
+         <h2 className="text-3xl font-light text-[#2A2421] tracking-tight">Reservasi</h2>
       </div>
       
       <div className="space-y-10">
         
         {/* Branch / Location */}
         <div>
-          <span className="text-[10px] text-[#8B8580] uppercase tracking-[0.2em] mb-4 block">Select Location</span>
+          <span className="text-[10px] text-[#8B8580] uppercase tracking-[0.2em] mb-4 block">Pilih Lokasi</span>
           <div className="w-full bg-white px-6 py-5 rounded-[1.5rem] premium-border flex justify-between items-center premium-shadow">
              <span className="font-light text-[#2A2421] text-lg tracking-tight">Sudirman Core</span>
              <span className="w-2 h-2 rounded-full bg-[#8B7355]"></span>
@@ -184,10 +181,10 @@ export default function BookingsTab({ userId }: { userId: number }) {
         {/* Table Selection */}
         <div>
           <div className="flex justify-between items-end mb-4">
-             <span className="text-[10px] text-[#8B8580] uppercase tracking-[0.2em] block">Select Table ({availableTables.length})</span>
+             <span className="text-[10px] text-[#8B8580] uppercase tracking-[0.2em] block">Pilih Meja ({availableTables.length})</span>
           </div>
           <div className="flex overflow-x-auto gap-4 pb-2 scrollbar-hide py-2">
-            {availableTables.length === 0 && <span className="text-xs text-[#8B8580] font-light italic">Waiting for connection...</span>}
+            {availableTables.length === 0 && <span className="text-xs text-[#8B8580] font-light italic">Menunggu koneksi...</span>}
             {availableTables.map((t) => (
               <div 
                 key={t.id} 
@@ -207,7 +204,7 @@ export default function BookingsTab({ userId }: { userId: number }) {
         <div className="space-y-8">
            {/* Duration */}
           <div>
-            <span className="text-[10px] text-[#8B8580] uppercase tracking-[0.2em] mb-4 block">Duration (Hours)</span>
+            <label className="text-[10px] font-medium text-[#8B8580] uppercase tracking-[0.2em] mb-4 block">Durasi</label>
             <div className="flex items-center justify-between bg-white premium-border rounded-[1.5rem] premium-shadow p-2">
               <button 
                 onClick={() => setDuration(Math.max(1, duration - 1))}
@@ -224,7 +221,7 @@ export default function BookingsTab({ userId }: { userId: number }) {
           
           {/* Players */}
           <div>
-            <span className="text-[10px] text-[#8B8580] uppercase tracking-[0.2em] mb-4 block">Players</span>
+            <label className="text-[10px] font-medium text-[#8B8580] uppercase tracking-[0.2em] mb-4 block">Meja Tersedia</label>
             <div className="flex grid grid-cols-3 gap-3">
               {["1-2", "3-4", "5+"].map((p) => (
                 <div 

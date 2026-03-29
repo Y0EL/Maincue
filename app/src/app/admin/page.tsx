@@ -54,12 +54,12 @@ export default function AdminPage() {
 
   const fetchDashboardData = async (token: string) => {
     try {
-      const statsRes = await fetch("http://localhost:8000/admin/stats", {
+      const statsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/admin/stats`, {
         headers: { "Authorization": `Bearer ${token}` }
       });
       if (statsRes.ok) setStats(await statsRes.json());
       
-      const evtRes = await fetch("http://localhost:8000/events", {
+      const evtRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/events`, {
         headers: { "Authorization": `Bearer ${token}` }
       });
       if (evtRes.ok) setEvents(await evtRes.json());
@@ -71,7 +71,7 @@ export default function AdminPage() {
   const handleLogin = async () => {
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:8000/admin/login", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/admin/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password })
@@ -101,7 +101,7 @@ export default function AdminPage() {
     setLoading(true);
     setShowScanner(false); // Turn off camera during API call
     try {
-      const res = await fetch(`http://localhost:8000/admin/verify-ticket?verification_code=${encodeURIComponent(ticketCode)}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/admin/verify-ticket?verification_code=${encodeURIComponent(ticketCode)}`, {
         method: "POST",
         headers: { "Authorization": `Bearer ${adminToken}` }
       });
@@ -127,7 +127,7 @@ export default function AdminPage() {
          return;
       }
       setLoading(true);
-      const res = await fetch("http://localhost:8000/admin/events", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/admin/events`, {
          method: "POST",
          headers: { 
             "Authorization": `Bearer ${adminToken}`,
@@ -155,7 +155,7 @@ export default function AdminPage() {
   const executeDelete = async () => {
       if (!eventToDelete) return;
       setLoading(true);
-      const res = await fetch(`http://localhost:8000/admin/events/${eventToDelete}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/admin/events/${eventToDelete}`, {
          method: "DELETE",
          headers: { "Authorization": `Bearer ${adminToken}` }
       });
@@ -174,8 +174,8 @@ export default function AdminPage() {
              <div className="w-16 h-16 bg-[#2A2421] text-[#D4C4B7] mx-auto rounded-full flex items-center justify-center mb-6">
                 <UserCircle size={32} />
              </div>
-             <h2 className="text-2xl font-light text-[#2A2421] mb-2 tracking-tight">Admin Login</h2>
-             <p className="text-xs text-[#8B8580] mb-8 uppercase tracking-[0.2em]">Authorized Personnel Only</p>
+             <h2 className="text-2xl font-light text-[#2A2421] mb-2 tracking-tight">Masuk Admin</h2>
+             <p className="text-xs text-[#8B8580] mb-8 uppercase tracking-[0.2em]">Khusus Personel Resmi</p>
              
              <div className="space-y-4 mb-8 text-left">
                 <div className="bg-[#F5F4F1] p-1.5 rounded-2xl border border-[#D4C4B7]/40">
@@ -187,7 +187,7 @@ export default function AdminPage() {
              </div>
 
              <button onClick={handleLogin} disabled={loading} className="w-full bg-[#2A2421] text-white py-4 rounded-2xl uppercase tracking-[0.2em] text-[10px] font-medium hover:bg-[#1A1614] active:scale-95 transition-all outline-none">
-                {loading ? "Authenticating..." : "Access Control"}
+                {loading ? "Membuka Akses..." : "Kontrol Akses"}
              </button>
           </div>
        </div>
@@ -203,8 +203,8 @@ export default function AdminPage() {
                 <UserCircle size={24} />
              </div>
              <div>
-                 <h1 className="text-xl font-light tracking-tight text-[#2A2421]">Admin Panel</h1>
-                 <p className="text-[10px] tracking-widest text-[#8B8580] uppercase -mt-0.5">Command Center</p>
+                 <h1 className="text-xl font-light tracking-tight text-[#2A2421]">Panel Admin</h1>
+                 <p className="text-[10px] tracking-widest text-[#8B8580] uppercase -mt-0.5">Pusat Komando</p>
               </div>
           </div>
           <button onClick={handleLogout} className="w-10 h-10 border border-[#D4C4B7] text-[#8B7355] rounded-full flex items-center justify-center hover:bg-[#F5F4F1] transition-colors">
@@ -219,7 +219,7 @@ export default function AdminPage() {
              {/* Box 1: Scanner & Input Verification */}
              <div className="bg-white rounded-[2rem] p-8 premium-shadow premium-border relative overflow-hidden h-fit">
                 <div className="absolute top-0 right-0 w-40 h-40 bg-[#D4C4B7]/20 -mr-10 -mt-10 rounded-full blur-xl" />
-                <h2 className="text-2xl font-light text-[#2A2421] mb-2 relative z-10">Verification Log</h2>
+                <h2 className="text-2xl font-light text-[#2A2421] mb-2 relative z-10">Log Verifikasi</h2>
                 <p className="text-xs text-[#8B8580] mb-8 font-light relative z-10 leading-relaxed max-w-xs">
                    Input manual atau scan QR dari layar pelanggan untuk memulai timer meja +10 Menit.
                 </p>
@@ -238,13 +238,13 @@ export default function AdminPage() {
                      onClick={() => handleVerify(code)}
                      className="bg-[#2A2421] text-white px-6 py-3 rounded-xl hover:bg-[#1A1614] active:scale-95 transition-all outline-none font-medium tracking-wide disabled:opacity-50 text-xs"
                   >
-                     {loading ? 'Wait..' : 'Verify'}
+                     {loading ? 'Tunggu..' : 'Verifikasi'}
                   </button>
                 </div>
 
                 <div className="flex items-center gap-4 my-6">
                    <div className="h-px bg-[#D4C4B7]/40 flex-1" />
-                   <span className="text-[10px] text-[#8B8580] uppercase tracking-widest">or scan qr</span>
+                   <span className="text-[10px] text-[#8B8580] uppercase tracking-widest">atau pindai qr</span>
                    <div className="h-px bg-[#D4C4B7]/40 flex-1" />
                 </div>
 
@@ -254,7 +254,7 @@ export default function AdminPage() {
                      onClick={() => setShowScanner(true)}
                      className="w-full bg-white border border-[#2A2421] text-[#2A2421] py-4 rounded-2xl flex items-center justify-center gap-3 hover:bg-[#F5F4F1] transition-all font-medium tracking-wider text-sm"
                    >
-                     <QrCode size={18} /> OPEN CAMERA
+                     <QrCode size={18} /> BUKA KAMERA
                    </button>
                 ) : (
                    <div className="w-full flex flex-col items-center">
@@ -263,7 +263,7 @@ export default function AdminPage() {
                         onClick={() => setShowScanner(false)}
                         className="text-[10px] uppercase tracking-[0.2em] font-medium text-[#8B8580] hover:text-[#2A2421] transition-colors py-2"
                       >
-                         Cancel Camera
+                         Tutup Kamera
                       </button>
                    </div>
                 )}
@@ -274,17 +274,17 @@ export default function AdminPage() {
                  {/* Total Revenue Today */}
                  <div className="bg-[#2A2421] rounded-[2rem] p-8 premium-shadow text-white relative overflow-hidden">
                     <div className="absolute -right-12 -bottom-12 w-48 h-48 bg-[#8B7355]/30 rounded-full blur-3xl block" />
-                    <span className="text-[10px] font-medium text-[#D4C4B7] uppercase tracking-[0.2em] block mb-4">Total Operations Revenue</span>
+                    <span className="text-[10px] font-medium text-[#D4C4B7] uppercase tracking-[0.2em] block mb-4">Total Pendapatan Operasional</span>
                     <h3 className="text-4xl font-light tracking-tight mb-2">Rp {stats.revenue.toLocaleString('id-ID')}</h3>
-                    <p className="text-xs font-light text-[#D4C4B7]/80">+{stats.verified_bookings} Booking Transactions Verified</p>
+                    <p className="text-xs font-light text-[#D4C4B7]/80">+{stats.verified_bookings} Transaksi Pesanan Terverifikasi</p>
                  </div>
 
                  {/* Future Event CRUD */}
                  <div className="bg-white rounded-[2rem] p-8 premium-shadow premium-border">
                     <div className="flex justify-between items-center mb-6">
-                       <h2 className="text-xl font-light text-[#2A2421]">Upcoming Events</h2>
+                       <h2 className="text-xl font-light text-[#2A2421]">Acara Mendatang</h2>
                        <button onClick={() => setShowAddEvent(true)} className="text-[9px] text-[#8B7355] border border-[#8B7355] px-3 py-2 rounded-xl hover:bg-[#8B7355] hover:text-white transition-colors uppercase tracking-[0.2em] font-medium">
-                          + Add
+                          + Tambah
                        </button>
                     </div>
                     <div className="space-y-3">
@@ -299,7 +299,7 @@ export default function AdminPage() {
                              </div>
                           </div>
                        ))}
-                       {events.length === 0 && <p className="text-xs text-[#8B8580] text-center italic">No upcoming events</p>}
+                       {events.length === 0 && <p className="text-xs text-[#8B8580] text-center italic">Tidak ada acara mendatang</p>}
                     </div>
                  </div>
               </div>
@@ -310,51 +310,51 @@ export default function AdminPage() {
        {showAddEvent && (
          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#2A2421]/60 backdrop-blur-sm">
             <div className="bg-[#FCFBFA] rounded-[2rem] p-8 w-full max-w-xl max-h-[90vh] overflow-y-auto premium-shadow border border-[#D4C4B7]/40">
-               <h3 className="text-xl font-light text-[#2A2421] mb-6">Create New Event</h3>
+               <h3 className="text-xl font-light text-[#2A2421] mb-6">Buat Acara Baru</h3>
                <div className="space-y-4 text-left">
                  <div>
-                    <label className="text-[10px] uppercase tracking-[0.2em] text-[#8B8580] mb-1 block">Title</label>
-                    <input type="text" value={newEvent.title} onChange={e => setNewEvent({...newEvent, title: e.target.value})} className="w-full bg-white border border-[#D4C4B7]/40 px-4 py-3 rounded-xl outline-none text-sm" placeholder="Ex: Pro Tournament" />
+                    <label className="text-[10px] uppercase tracking-[0.2em] text-[#8B8580] mb-1 block">Judul</label>
+                    <input type="text" value={newEvent.title} onChange={e => setNewEvent({...newEvent, title: e.target.value})} className="w-full bg-white border border-[#D4C4B7]/40 px-4 py-3 rounded-xl outline-none text-sm" placeholder="Contoh: Turnamen Pro" />
                  </div>
                  <div>
-                    <label className="text-[10px] uppercase tracking-[0.2em] text-[#8B8580] mb-1 block">Date & Time</label>
-                    <input type="text" value={newEvent.date} onChange={e => setNewEvent({...newEvent, date: e.target.value})} className="w-full bg-white border border-[#D4C4B7]/40 px-4 py-3 rounded-xl outline-none text-sm" placeholder="Ex: Friday, April 15 - 19:00" />
+                    <label className="text-[10px] uppercase tracking-[0.2em] text-[#8B8580] mb-1 block">Tanggal & Waktu</label>
+                    <input type="text" value={newEvent.date} onChange={e => setNewEvent({...newEvent, date: e.target.value})} className="w-full bg-white border border-[#D4C4B7]/40 px-4 py-3 rounded-xl outline-none text-sm" placeholder="Contoh: Jumat, 15 April - 19:00" />
                  </div>
                  <div>
-                    <label className="text-[10px] uppercase tracking-[0.2em] text-[#8B8580] mb-1 block">Short Summary (For Card)</label>
-                    <textarea value={newEvent.description} onChange={e => setNewEvent({...newEvent, description: e.target.value})} className="w-full bg-white border border-[#D4C4B7]/40 px-4 py-3 rounded-xl outline-none text-sm h-16 resize-none" placeholder="Brief intro..." />
+                    <label className="text-[10px] uppercase tracking-[0.2em] text-[#8B8580] mb-1 block">Ringkasan Singkat (Untuk Kartu)</label>
+                    <textarea value={newEvent.description} onChange={e => setNewEvent({...newEvent, description: e.target.value})} className="w-full bg-white border border-[#D4C4B7]/40 px-4 py-3 rounded-xl outline-none text-sm h-16 resize-none" placeholder="Pengantar singkat..." />
                  </div>
                  <div>
-                    <label className="text-[10px] uppercase tracking-[0.2em] text-[#8B8580] mb-1 block">Main Image URL (Optional)</label>
+                    <label className="text-[10px] uppercase tracking-[0.2em] text-[#8B8580] mb-1 block">URL Gambar Utama (Opsional)</label>
                     <input type="text" value={newEvent.image_url} onChange={e => setNewEvent({...newEvent, image_url: e.target.value})} className="w-full bg-white border border-[#D4C4B7]/40 px-4 py-3 rounded-xl outline-none text-sm" placeholder="https://..." />
                  </div>
                  <div>
-                    <label className="text-[10px] uppercase tracking-[0.2em] text-[#8B8580] mb-1 block">Rich Content (HTML Allowed)</label>
+                    <label className="text-[10px] uppercase tracking-[0.2em] text-[#8B8580] mb-1 block">Konten Lengkap (HTML Diizinkan)</label>
                     <div className="bg-white border border-[#D4C4B7]/40 rounded-xl overflow-hidden">
                        <div className="bg-[#F5F4F1] p-2 border-b border-[#D4C4B7]/40 flex gap-2">
-                          <button onClick={() => setNewEvent({...newEvent, content_html: newEvent.content_html + '<b>Bold</b>'})} className="px-2 py-1 text-xs font-bold text-[#2A2421] hover:bg-[#D4C4B7]/20 rounded">B</button>
-                          <button onClick={() => setNewEvent({...newEvent, content_html: newEvent.content_html + '<i>Italic</i>'})} className="px-2 py-1 text-xs italic text-[#2A2421] hover:bg-[#D4C4B7]/20 rounded">I</button>
-                          <button onClick={() => setNewEvent({...newEvent, content_html: newEvent.content_html + '<h2 style="font-size:24px; color:#2A2421;">Title</h2>'})} className="px-2 py-1 text-xs text-[#2A2421] hover:bg-[#D4C4B7]/20 rounded">Heading</button>
-                          <button onClick={() => setNewEvent({...newEvent, content_html: newEvent.content_html + '<br/>'})} className="px-2 py-1 text-xs text-[#2A2421] hover:bg-[#D4C4B7]/20 rounded">Enter (br)</button>
+                          <button onClick={() => setNewEvent({...newEvent, content_html: newEvent.content_html + '<b>Tebal</b>'})} className="px-2 py-1 text-xs font-bold text-[#2A2421] hover:bg-[#D4C4B7]/20 rounded">B</button>
+                          <button onClick={() => setNewEvent({...newEvent, content_html: newEvent.content_html + '<i>Miring</i>'})} className="px-2 py-1 text-xs italic text-[#2A2421] hover:bg-[#D4C4B7]/20 rounded">I</button>
+                          <button onClick={() => setNewEvent({...newEvent, content_html: newEvent.content_html + '<h2 style="font-size:24px; color:#2A2421;">Judul</h2>'})} className="px-2 py-1 text-xs text-[#2A2421] hover:bg-[#D4C4B7]/20 rounded">Judul Besar</button>
+                          <button onClick={() => setNewEvent({...newEvent, content_html: newEvent.content_html + '<br/>'})} className="px-2 py-1 text-xs text-[#2A2421] hover:bg-[#D4C4B7]/20 rounded">Enter (Brs)</button>
                        </div>
-                       <textarea value={newEvent.content_html} onChange={e => setNewEvent({...newEvent, content_html: e.target.value})} className="w-full bg-transparent px-4 py-3 outline-none text-sm h-32 resize-none" placeholder="<p>Write full event details here...</p>" />
+                       <textarea value={newEvent.content_html} onChange={e => setNewEvent({...newEvent, content_html: e.target.value})} className="w-full bg-transparent px-4 py-3 outline-none text-sm h-32 resize-none" placeholder="<p>Tulis rincian acara lengkap di sini...</p>" />
                     </div>
                  </div>
                  <div className="grid grid-cols-2 gap-4">
                     <div>
-                       <label className="text-[10px] uppercase tracking-[0.2em] text-[#8B8580] mb-1 block">CTA Button Text</label>
-                       <input type="text" value={newEvent.cta_text} onChange={e => setNewEvent({...newEvent, cta_text: e.target.value})} className="w-full bg-white border border-[#D4C4B7]/40 px-4 py-3 rounded-xl outline-none text-sm" placeholder="RSVP Now" />
+                       <label className="text-[10px] uppercase tracking-[0.2em] text-[#8B8580] mb-1 block">Teks Tombol Aksi</label>
+                       <input type="text" value={newEvent.cta_text} onChange={e => setNewEvent({...newEvent, cta_text: e.target.value})} className="w-full bg-white border border-[#D4C4B7]/40 px-4 py-3 rounded-xl outline-none text-sm" placeholder="Daftar Sekarang" />
                     </div>
                     <div>
-                       <label className="text-[10px] uppercase tracking-[0.2em] text-[#8B8580] mb-1 block">CTA Button Link</label>
+                       <label className="text-[10px] uppercase tracking-[0.2em] text-[#8B8580] mb-1 block">Tautan Tombol Aksi</label>
                        <input type="text" value={newEvent.cta_link} onChange={e => setNewEvent({...newEvent, cta_link: e.target.value})} className="w-full bg-white border border-[#D4C4B7]/40 px-4 py-3 rounded-xl outline-none text-sm" placeholder="https://wa.me/..." />
                     </div>
                  </div>
                </div>
                
                <div className="flex justify-end gap-3 mt-8">
-                  <button disabled={loading} onClick={() => setShowAddEvent(false)} className="px-6 py-3 text-sm text-[#8B8580] hover:text-[#2A2421]">Cancel</button>
-                  <button disabled={loading} onClick={handleAddEventSubmit} className="bg-[#2A2421] text-[#D4C4B7] px-8 py-3 rounded-xl text-xs uppercase tracking-[0.2em] font-medium hover:bg-[#1A1614] active:scale-95 transition-transform">{loading ? 'Publishing...' : 'Publish Event'}</button>
+                  <button disabled={loading} onClick={() => setShowAddEvent(false)} className="px-6 py-3 text-sm text-[#8B8580] hover:text-[#2A2421]">Batal</button>
+                  <button disabled={loading} onClick={handleAddEventSubmit} className="bg-[#2A2421] text-[#D4C4B7] px-8 py-3 rounded-xl text-xs uppercase tracking-[0.2em] font-medium hover:bg-[#1A1614] active:scale-95 transition-transform">{loading ? 'Menerbitkan...' : 'Terbitkan Acara'}</button>
                </div>
             </div>
          </div>
@@ -364,11 +364,11 @@ export default function AdminPage() {
        {eventToDelete !== null && (
          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#2A2421]/60 backdrop-blur-sm">
             <div className="bg-[#FCFBFA] rounded-[2rem] p-8 w-full max-w-sm text-center premium-shadow border border-[#D4C4B7]/40">
-               <h3 className="text-xl font-light text-[#2A2421] mb-2">Delete Event?</h3>
-               <p className="text-xs text-[#8B8580] mb-8">This action cannot be undone.</p>
+               <h3 className="text-xl font-light text-[#2A2421] mb-2">Hapus Acara?</h3>
+               <p className="text-xs text-[#8B8580] mb-8">Tindakan ini tidak dapat dibatalkan.</p>
                <div className="flex gap-4">
-                  <button disabled={loading} onClick={() => setEventToDelete(null)} className="flex-1 bg-white border border-[#D4C4B7] text-[#2A2421] py-3 rounded-xl text-xs font-medium">Cancel</button>
-                  <button disabled={loading} onClick={executeDelete} className="flex-1 bg-red-500 text-white py-3 rounded-xl text-xs font-medium">{loading ? 'Deleting...' : 'Confirm'}</button>
+                  <button disabled={loading} onClick={() => setEventToDelete(null)} className="flex-1 bg-white border border-[#D4C4B7] text-[#2A2421] py-3 rounded-xl text-xs font-medium">Batal</button>
+                  <button disabled={loading} onClick={executeDelete} className="flex-1 bg-red-500 text-white py-3 rounded-xl text-xs font-medium">{loading ? 'Menghapus...' : 'Konfirmasi'}</button>
                </div>
             </div>
          </div>

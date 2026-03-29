@@ -15,7 +15,7 @@ import ProfileTab from "../components/ProfileTab";
 import TablesTab from "../components/TablesTab";
 import EventsTab from "../components/EventsTab";
 
-const API_URL = "http://localhost:8000";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<"home" | "tables" | "bookings" | "profile" | "events">("home");
@@ -57,8 +57,8 @@ export default function App() {
     } catch (err) {
       console.error(err);
       showModal({
-        title: "Access Denied",
-        message: "Failed to authenticate or connect securely to the lounge server.",
+        title: "Akses Ditolak",
+        message: "Gagal masuk atau tidak dapat terhubung ke server utama.",
         type: "error"
       });
     } finally {
@@ -87,7 +87,7 @@ export default function App() {
               maincue.id
             </h1>
             <p className="text-xs tracking-[0.2em] uppercase font-medium text-[#8B8580]">
-              Exclusive Lounge
+              Eksklusif Lounge
             </p>
           </div>
 
@@ -97,7 +97,7 @@ export default function App() {
               disabled={loginLoading}
               className="mt-8 w-full h-14 bg-[#2A2421] text-white font-medium tracking-[0.1em] text-xs flex items-center justify-center gap-3 disabled:opacity-50 transition-colors uppercase hover:bg-[#1C1816]"
             >
-              {loginLoading ? <Loader2 className="animate-spin w-4 h-4" /> : <>Sign In with Google <ArrowRight size={14} /></>}
+              {loginLoading ? <Loader2 className="animate-spin w-4 h-4" /> : <>Masuk dengan Google <ArrowRight size={14} /></>}
             </button>
           </div>
         </motion.div>
@@ -141,8 +141,8 @@ export default function App() {
 
       {/* ── Bottom Nav ── */}
       <nav className="fixed bottom-0 left-0 right-0 h-24 max-w-md mx-auto bg-white/90 backdrop-blur-xl border-t border-[#D4C4B7]/30 flex items-center justify-between px-8 z-40 pb-4">
-        <NavItem icon={<Home size={22} strokeWidth={1.5} />} label="Home" active={activeTab === "home"} onClick={() => setActiveTab("home")} />
-        <NavItem icon={<Grid size={22} strokeWidth={1.5} />} label="Tables" active={activeTab === "tables"} onClick={() => setActiveTab("tables")} />
+        <NavItem icon={<Home size={22} strokeWidth={1.5} />} label="Beranda" active={activeTab === "home"} onClick={() => setActiveTab("home")} />
+        <NavItem icon={<Grid size={22} strokeWidth={1.5} />} label="Meja" active={activeTab === "tables"} onClick={() => setActiveTab("tables")} />
         <div className="w-14 h-14 flex items-center justify-center -mt-8">
           <motion.button onClick={() => setActiveTab("bookings")}
             whileHover={{ scale: 1.05 }}
@@ -151,8 +151,8 @@ export default function App() {
             <Plus size={24} strokeWidth={1.5} />
           </motion.button>
         </div>
-        <NavItem icon={<Ticket size={22} strokeWidth={1.5} />} label="Events" active={activeTab === "events"} onClick={() => setActiveTab("events")} />
-        <NavItem icon={<User size={22} strokeWidth={1.5} />} label="Profile" active={activeTab === "profile"} onClick={() => setActiveTab("profile")} />
+        <NavItem icon={<Ticket size={22} strokeWidth={1.5} />} label="Acara" active={activeTab === "events"} onClick={() => setActiveTab("events")} />
+        <NavItem icon={<User size={22} strokeWidth={1.5} />} label="Profil" active={activeTab === "profile"} onClick={() => setActiveTab("profile")} />
       </nav>
     </div>
   );

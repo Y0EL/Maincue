@@ -13,7 +13,7 @@ export default function HomeTab({ userId, onGoBook }: { userId: number, onGoBook
     const userStr = localStorage.getItem("billiard_user");
     const token = userStr ? JSON.parse(userStr).token : "";
 
-    fetch(`http://localhost:8000/user/${userId}`, {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/user/${userId}`, {
       headers: {
         "Authorization": `Bearer ${token}`
       }
@@ -54,25 +54,25 @@ export default function HomeTab({ userId, onGoBook }: { userId: number, onGoBook
         <div className="absolute right-0 top-0 w-64 h-64 bg-gradient-to-br from-[#8B7355]/20 to-transparent opacity-50" />
         <div className="relative z-10">
           <span className="text-[10px] font-medium uppercase tracking-[0.2em] text-[#D4C4B7] mb-4 block">
-             {user?.active_tables?.length > 0 ? "Currently Active" : user?.pending_tickets?.length > 0 ? "Tickets Ready" : "Reservation"}
+             {user?.active_tables?.length > 0 ? "Sedang Aktif" : user?.pending_tickets?.length > 0 ? "Tiket Siap" : "Reservasi"}
           </span>
           <h2 className="text-3xl font-light leading-tight mb-8">
             {user?.active_tables?.length > 0 ? (
-              <>Enjoy<br/>Your Game</>
+              <>Selamat<br/>Bermain</>
             ) : user?.pending_tickets?.length > 0 ? (
-              <>Scan<br/>To Play</>
+              <>Pindai<br/>Untuk Main</>
             ) : (
-              <>Secure<br/>Your Table</>
+              <>Amankan<br/>Meja Anda</>
             )}
           </h2>
           
           <div className={`flex flex-row items-center gap-3 text-xs font-medium uppercase tracking-widest text-white pb-1 w-fit transition-colors ${(!user?.active_tables?.length && !user?.pending_tickets?.length) ? 'border-b border-[#8B7355] hover:border-white' : 'opacity-80'}`}>
             {user?.active_tables?.length > 0 ? (
-              <span>Session In Progress</span>
+              <span>Sesi Sedang Berjalan</span>
             ) : user?.pending_tickets?.length > 0 ? (
-              <span>Give Code to Admin</span>
+              <span>Tukar Kode di Admin</span>
             ) : (
-              <>Book Now <ArrowRight size={14} /></>
+              <>Pesan Sekarang <ArrowRight size={14} /></>
             )}
           </div>
         </div>
@@ -82,7 +82,7 @@ export default function HomeTab({ userId, onGoBook }: { userId: number, onGoBook
       <div className="space-y-4">
         <div className="flex justify-between items-center px-2">
           <h3 className="text-[10px] font-medium text-[#8B8580] uppercase tracking-[0.2em]">
-            {user?.pending_tickets?.length > 0 ? "Verify to Start" : "Active Session"}
+            {user?.pending_tickets?.length > 0 ? "Verifikasi Untuk Mulai" : "Sesi Aktif"}
           </h3>
           <button onClick={fetchUser} className="text-[#8B8580] hover:text-[#2A2421] transition-colors"><RefreshCw size={14} strokeWidth={1.5} /></button>
         </div>
@@ -96,8 +96,8 @@ export default function HomeTab({ userId, onGoBook }: { userId: number, onGoBook
              className="bg-white p-6 rounded-[2rem] premium-border premium-shadow flex items-center justify-between cursor-pointer group hover:bg-[#F5F4F1] transition-colors mb-4"
            >
               <div>
-                <span className="text-[10px] font-medium text-[#8B7355] uppercase tracking-[0.2em] mb-2 block">Ticket Ready</span>
-                <h4 className="text-3xl font-light text-[#2A2421] tracking-tight">Table No. {ticket.table_id}</h4>
+                <span className="text-[10px] font-medium text-[#8B7355] uppercase tracking-[0.2em] mb-2 block">Tiket Siap</span>
+                <h4 className="text-3xl font-light text-[#2A2421] tracking-tight">Meja No. {ticket.table_id}</h4>
               </div>
               <div className="w-14 h-14 bg-[#2A2421] text-white rounded-full flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform flex-shrink-0">
                 <QrCode size={24} strokeWidth={1.5} />
@@ -110,14 +110,14 @@ export default function HomeTab({ userId, onGoBook }: { userId: number, onGoBook
            <div key={`active-${table.id}`} className="bg-white p-8 rounded-[2rem] premium-border premium-shadow mb-4">
               <div className="flex justify-between items-start mb-8">
                 <div>
-                   <span className="text-[10px] font-medium text-[#8B7355] uppercase tracking-[0.2em] mb-2 block">Table Status : Active</span>
+                   <span className="text-[10px] font-medium text-[#8B7355] uppercase tracking-[0.2em] mb-2 block">Status Meja : Aktif</span>
                    <h4 className="text-4xl font-light text-[#2A2421]">No. {table.id}</h4>
                 </div>
               </div>
               <div className="flex justify-between items-center border-t border-[#D4C4B7]/30 pt-4">
-                <span className="text-[10px] uppercase tracking-widest text-[#8B8580]">Time Left</span>
+                <span className="text-[10px] uppercase tracking-widest text-[#8B8580]">Sisa Waktu</span>
                 <span className="text-sm font-medium text-[#2A2421]">
-                  Ends at {new Date(table.active_until).toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit', hour12: false})}
+                  Selesai pukul {new Date(table.active_until).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit', hour12: false})}
                 </span>
               </div>
            </div>
@@ -125,8 +125,8 @@ export default function HomeTab({ userId, onGoBook }: { userId: number, onGoBook
         
         {(!user?.pending_tickets?.length && !user?.active_tables?.length) && (
            <div className="bg-transparent border border-[#D4C4B7]/40 rounded-[2rem] p-10 text-center">
-              <p className="text-sm font-light text-[#2A2421] mb-2">No active reservations.</p>
-              <p className="text-[10px] uppercase tracking-[0.1em] text-[#8B8580]">Reserve a table to start</p>
+              <p className="text-sm font-light text-[#2A2421] mb-2">Tidak ada reservasi aktif.</p>
+              <p className="text-[10px] uppercase tracking-[0.1em] text-[#8B8580]">Pesan meja untuk memulai permainan</p>
            </div>
         )}
       </div>
@@ -149,7 +149,7 @@ export default function HomeTab({ userId, onGoBook }: { userId: number, onGoBook
               className="relative w-full max-w-sm bg-[#FCFBFA] rounded-[2rem] p-8 shadow-2xl flex flex-col items-center text-center border border-[#D4C4B7]/40 z-10"
             >
               <span className="text-[10px] font-medium text-[#8B7355] uppercase tracking-[0.2em] mb-4 block">
-                Verification Ticket
+                Tiket Verifikasi
               </span>
               
               <div className="bg-white p-4 rounded-xl border border-[#D4C4B7] shadow-sm mb-6 mt-2 inline-block relative">
@@ -163,7 +163,7 @@ export default function HomeTab({ userId, onGoBook }: { userId: number, onGoBook
               </div>
               
               <h4 className="text-3xl tracking-[0.3em] font-light text-[#2A2421] mb-2">{selectedTicket.verification_code}</h4>
-              <p className="text-[11px] text-[#8B8580] mb-6 font-medium tracking-[0.1em] uppercase">Table {selectedTicket.table_id} • {selectedTicket.duration} Hours</p>
+              <p className="text-[11px] text-[#8B8580] mb-6 font-medium tracking-[0.1em] uppercase">Meja {selectedTicket.table_id} • {selectedTicket.duration} Jam</p>
               
               <div className="bg-[#F5F4F1] p-4 rounded-2xl w-full text-left mb-8 border border-[#D4C4B7]/40 ring-1 ring-white/50 shadow-inner">
                 <p className="text-[10px] text-[#2A2421] tracking-[0.1em] uppercase leading-relaxed font-semibold mb-1">🎁 Benefit Spesial:</p>
