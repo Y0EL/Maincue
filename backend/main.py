@@ -90,6 +90,14 @@ def init_db():
         c.execute("ALTER TABLE bookings ADD COLUMN is_verified BOOLEAN DEFAULT 0")
     except sqlite3.OperationalError:
         pass
+    try:
+        c.execute("ALTER TABLE bookings ADD COLUMN players TEXT DEFAULT '1-2'")
+    except sqlite3.OperationalError:
+        pass
+    try:
+        c.execute("ALTER TABLE bookings ADD COLUMN created_at TEXT DEFAULT CURRENT_TIMESTAMP")
+    except sqlite3.OperationalError:
+        pass
 
     # Create events table
     c.execute('''CREATE TABLE IF NOT EXISTS events (
@@ -277,6 +285,24 @@ def admin_stats(admin=Depends(verify_admin_token)):
         "verified_bookings": row[1] or 0
     }
 
+@app.get("/admin/bookings")
+def admin_bookings(admin=Depends(verify_admin_token)):
+    conn = get_db()
+    c = conn.cursor()
+    # Note: created_at is intentionally excluded for backwards compat with old DBs
+    c.execute("""
+        SELECT b.id, b.table_id, b.duration, b.players, b.cost, b.status, 
+               b.is_verified, b.verification_code,
+               u.name as user_name, u.email as user_email
+        FROM bookings b
+        LEFT JOIN users u ON b.user_id = u.id
+        ORDER BY b.id DESC
+        LIMIT 100
+    """)
+    rows = [dict(r) for r in c.fetchall()]
+    conn.close()
+    return rows
+
 @app.get("/events")
 def get_events():
     conn = get_db()
@@ -356,6 +382,32 @@ def update_user(user_id: int, req: UserUpdateRequest, auth_user_id: int = Depend
 async def get_tables():
     conn = get_db()
     c = conn.cursor()
+    
+    # Auto refund for PAID but unverified tickets older than 24 hours
+    # Wrapped in try/except for backwards compatibility with old DBs without created_at column
+    try:
+        yesterday = (datetime.now() - timedelta(hours=24)).strftime('%Y-%m-%d %H:%M:%S')
+        c.execute("SELECT id, user_id, cost FROM bookings WHERE status = 'PAID' AND is_verified = 0 AND created_at < ?", (yesterday,))
+        expired_bookings = c.fetchall()
+        for eb in expired_bookings:
+            c.execute("UPDATE users SET balance = balance + ? WHERE id = ?", (eb['cost'], eb['user_id']))
+            c.execute("UPDATE bookings SET status = 'REFUNDED' WHERE id = ?", (eb['id'],))
+        if expired_bookings:
+            conn.commit()
+    except sqlite3.OperationalError:
+        pass  # created_at column not yet in DB — safe to skip
+
+    # Get players info 
+    c.execute("SELECT table_id, COUNT(id) as wl_count FROM bookings WHERE status = 'PAID' AND is_verified = 0 GROUP BY table_id")
+    wl_dict = {row['table_id']: row['wl_count'] for row in c.fetchall()}
+    
+    c.execute("SELECT table_id, SUM(cost) as total_rev FROM bookings WHERE status = 'PAID' GROUP BY table_id")
+    rev_dict = {row['table_id']: row['total_rev'] for row in c.fetchall()}
+
+    # Get playing players count per table
+    c.execute("SELECT table_id, SUM(CAST(REPLACE(REPLACE(players,'5+','5'),'3-4','4') AS INTEGER)) as player_est FROM bookings WHERE is_verified = 1 AND status = 'PAID' GROUP BY table_id")
+    players_dict = {row['table_id']: row['player_est'] for row in c.fetchall()}
+
     c.execute("SELECT * FROM tables")
     rows = c.fetchall()
     
@@ -366,6 +418,7 @@ async def get_tables():
     for r in rows:
         status = r["status"]
         remaining = None
+        seconds_remaining = None
         active_user_id = r["active_user_id"]
         
         if r["status"] == "Playing" and r["active_until"]:
@@ -378,6 +431,7 @@ async def get_tables():
                 has_expired_changes = True
             else:
                 diff = active_until - now
+                seconds_remaining = int(diff.total_seconds())
                 hours, remainder = divmod(diff.seconds, 3600)
                 minutes = remainder // 60
                 remaining = f"{hours}h {minutes}m" if hours > 0 else f"{minutes}m"
@@ -397,7 +451,11 @@ async def get_tables():
             "type": r["type"],
             "status": status,
             "remaining": remaining,
-            "active_user_id": active_user_id
+            "seconds_remaining": seconds_remaining,
+            "active_user_id": active_user_id,
+            "waitlist_count": wl_dict.get(r['id'], 0),
+            "total_revenue": rev_dict.get(r['id'], 0),
+            "active_until": r["active_until"]
         })
     conn.close()
     
@@ -422,13 +480,15 @@ async def book_table(req: BookingRequest, auth_user_id: int = Depends(verify_tok
         conn.close()
         raise HTTPException(status_code=404, detail="Meja tidak ditemukan")
         
-    # Optimistic locking prevent Race Condition (Double Booking)
     expiry = datetime.now() + timedelta(minutes=15)
-    c.execute("UPDATE tables SET status = 'Reserved', active_until = ?, active_user_id = ? WHERE id = ? AND status = 'Available'", (expiry.isoformat(), req.user_id, req.table_id))
-    if c.rowcount == 0:
-        conn.close()
-        raise HTTPException(status_code=400, detail="Meja sedang dipakai atau baru saja dibooking pengguna lain.")
-    conn.commit()
+    
+    table_was_available = row["status"] == "Available"
+    
+    # If it is available, block it as Reserved to prevent concurrent booking race condition.
+    # If not, let it be (user is waitlisting — they pay, then wait their turn)
+    if table_was_available:
+        c.execute("UPDATE tables SET status = 'Reserved', active_until = ?, active_user_id = ? WHERE id = ?", (expiry.isoformat(), req.user_id, req.table_id))
+        conn.commit()
         
     # Create Booking using Xendit
     ext_id = f"bkg_{uuid.uuid4().hex[:8]}"
@@ -460,8 +520,9 @@ async def book_table(req: BookingRequest, auth_user_id: int = Depends(verify_tok
                 if attempt == 2:
                     raise e
                     
-        # Insert booking
-        c.execute("INSERT INTO bookings (user_id, table_id, status, duration, cost, qr_string, reference_id) VALUES (?, ?, 'PENDING', ?, ?, ?, ?)", (req.user_id, req.table_id, req.duration, cost, qr_string, ext_id))
+        # Insert booking WITHOUT created_at — let DB DEFAULT CURRENT_TIMESTAMP handle it
+        c.execute("INSERT INTO bookings (user_id, table_id, status, duration, players, cost, qr_string, reference_id) VALUES (?, ?, 'PENDING', ?, ?, ?, ?, ?)", 
+                  (req.user_id, req.table_id, req.duration, req.players, cost, qr_string, ext_id))
         booking_id = c.lastrowid
         conn.commit()
         
@@ -469,17 +530,20 @@ async def book_table(req: BookingRequest, auth_user_id: int = Depends(verify_tok
             "success": True, 
             "booking_id": booking_id, 
             "qr_string": qr_string,
-            "amount": cost
+            "amount": cost,
+            "is_waitlist": not table_was_available
         }
             
     except Exception as e:
-        # Rollback temporary reserved status if Xendit failed
-        c.execute("UPDATE tables SET status = 'Available', active_until = NULL, active_user_id = NULL WHERE id = ?", (req.table_id,))
-        conn.commit()
+        # Only rollback if WE set the table to Reserved (not if user was waitlisting on an occupied table)
+        if table_was_available:
+            c.execute("UPDATE tables SET status = 'Available', active_until = NULL, active_user_id = NULL WHERE id = ?", (req.table_id,))
+            conn.commit()
         raise HTTPException(status_code=500, detail=str(e))
     finally:
         conn.close()
         await manager.broadcast("tables_updated")
+
 
 @app.get("/booking/{booking_id}")
 def get_booking(booking_id: int):
@@ -506,13 +570,34 @@ async def verify_ticket(verification_code: str, admin=Depends(verify_admin_token
     # Start the timer
     now = datetime.now()
     active_until = now + timedelta(hours=booking["duration"])
-    c.execute("UPDATE tables SET status = 'Playing', active_until = ? WHERE id = ?", (active_until.isoformat(), booking["table_id"]))
+    c.execute("UPDATE tables SET status = 'Playing', active_until = ?, active_user_id = ? WHERE id = ?", (active_until.isoformat(), booking["user_id"], booking["table_id"]))
     c.execute("UPDATE bookings SET is_verified = 1 WHERE id = ?", (booking["id"],))
     
     conn.commit()
     conn.close()
     await manager.broadcast("tables_updated")
     return {"status": "success", "message": "Tiket berhasil diverifikasi. Waktu dimulai."}
+
+@app.post("/admin/end-table/{table_id}")
+async def admin_end_table(table_id: int, admin=Depends(verify_admin_token)):
+    """Admin manually ends a table session early."""
+    conn = get_db()
+    c = conn.cursor()
+    c.execute("SELECT * FROM tables WHERE id = ?", (table_id,))
+    table = c.fetchone()
+    if not table:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Meja tidak ditemukan")
+    if table["status"] not in ("Playing", "Reserved"):
+        conn.close()
+        raise HTTPException(status_code=400, detail="Meja tidak sedang aktif")
+    
+    # Free the table immediately
+    c.execute("UPDATE tables SET status = 'Available', active_until = NULL, active_user_id = NULL WHERE id = ?", (table_id,))
+    conn.commit()
+    conn.close()
+    await manager.broadcast("tables_updated")
+    return {"success": True, "message": f"Sesi Meja #{table_id} berhasil diakhiri oleh Admin"}
 
 @app.post("/xendit/webhook")
 async def xendit_webhook(request: Request):
