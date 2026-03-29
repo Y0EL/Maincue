@@ -6,10 +6,26 @@ export default function ProfileTab({ userId, onLogout }: { userId: number, onLog
   const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
-    fetch(`http://localhost:8000/user/${userId}`)
-      .then(r => r.json())
-      .then(setUser)
-      .catch(e => console.log(e));
+    const userStr = localStorage.getItem("billiard_user");
+    const token = userStr ? JSON.parse(userStr).token : "";
+
+    fetch(`http://localhost:8000/user/${userId}`, {
+      headers: {
+        "Authorization": `Bearer ${token}`
+      }
+    })
+      .then(async r => {
+        if (!r.ok) {
+           const errData = await r.json();
+           console.error(errData);
+           return null; // Return null instead of error json
+        }
+        return r.json();
+      })
+      .then(data => {
+        if (data) setUser(data);
+      })
+      .catch(e => console.log("Fetch user error:", e));
   }, []);
 
   return (
@@ -18,11 +34,11 @@ export default function ProfileTab({ userId, onLogout }: { userId: number, onLog
       {/* Profile Info */}
       <div className="text-center space-y-4">
          <div className="w-24 h-24 mx-auto rounded-full bg-transparent border border-[#D4C4B7] flex items-center justify-center text-[#2A2421]">
-            <span className="text-3xl font-light tracking-tight">{user ? user.name.charAt(0).toUpperCase() : ''}</span>
+            <span className="text-3xl font-light tracking-tight">{user?.name ? user.name.charAt(0).toUpperCase() : '?'}</span>
          </div>
          
          <div>
-            <h2 className="text-3xl font-light text-[#2A2421] tracking-tight">{user ? user.name : 'Loading...'}</h2>
+            <h2 className="text-3xl font-light text-[#2A2421] tracking-tight">{user?.name ? user.name : 'Not Authenticated'}</h2>
             <p className="text-[10px] uppercase tracking-[0.2em] font-medium text-[#8B8580] mt-2">Member</p>
          </div>
       </div>

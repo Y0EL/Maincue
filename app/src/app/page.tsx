@@ -3,6 +3,9 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight, Grid, Home, Loader2, Plus, User, Ticket } from "lucide-react";
 import { useEffect, useState } from "react";
+import { signInWithPopup, GoogleAuthProvider, signOut } from "firebase/auth";
+import { auth } from "../lib/firebase";
+import { useModal } from "../components/ModalProvider";
 
 // Components
 import BookingsTab from "../components/BookingsTab";
@@ -18,10 +21,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<"home" | "tables" | "bookings" | "profile" | "events">("home");
   const [mounted, setMounted] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
-
-  // Login param
-  const [username, setUsername] = useState("");
-  const [loginLoading, setLoginLoading] = useState(false);
+  const { showModal } = useModal();
 
   useEffect(() => {
     setMounted(true);
@@ -31,31 +31,47 @@ export default function App() {
     }
   }, []);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!username.trim()) return;
+  const [loginLoading, setLoginLoading] = useState(false);
+
+  const handleGoogleLogin = async () => {
     setLoginLoading(true);
     try {
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+      const firebaseUser = result.user;
+      const idToken = await firebaseUser.getIdToken();
+      
       const res = await fetch(`${API_URL}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: username.trim() })
+        body: JSON.stringify({ 
+          token: idToken,
+          name: firebaseUser.displayName || "User",
+          email: firebaseUser.email || ""
+        })
       });
-      if (!res.ok) throw new Error("Gagal login");
+      if (!res.ok) throw new Error("Gagal login backend");
       const user = await res.json();
       setCurrentUser(user);
       localStorage.setItem("billiard_user", JSON.stringify(user));
     } catch (err) {
-      alert("Pastikan server Python sudah jalan!");
+      console.error(err);
+      showModal({
+        title: "Access Denied",
+        message: "Failed to authenticate or connect securely to the lounge server.",
+        type: "error"
+      });
     } finally {
       setLoginLoading(false);
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+    } catch(e) { console.error(e); }
     localStorage.removeItem("billiard_user");
     setCurrentUser(null);
-    setUsername("");
   };
 
   if (!mounted) return null;
@@ -75,22 +91,15 @@ export default function App() {
             </p>
           </div>
 
-          <form onSubmit={handleLogin} className="space-y-4">
-            <input
-              type="text"
-              placeholder="YOUR NAME"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="w-full h-14 bg-transparent border-b border-[#D4C4B7] text-[#2A2421] px-2 font-medium outline-none focus:border-[#2A2421] transition-colors text-center text-sm tracking-widest placeholder:text-[#D4C4B7]"
-            />
+          <div className="space-y-4">
             <button
-              type="submit"
-              disabled={loginLoading || !username.trim()}
+              onClick={handleGoogleLogin}
+              disabled={loginLoading}
               className="mt-8 w-full h-14 bg-[#2A2421] text-white font-medium tracking-[0.1em] text-xs flex items-center justify-center gap-3 disabled:opacity-50 transition-colors uppercase hover:bg-[#1C1816]"
             >
-              {loginLoading ? <Loader2 className="animate-spin w-4 h-4" /> : <>Enter Lounge <ArrowRight size={14} /></>}
+              {loginLoading ? <Loader2 className="animate-spin w-4 h-4" /> : <>Sign In with Google <ArrowRight size={14} /></>}
             </button>
-          </form>
+          </div>
         </motion.div>
       </div>
     );

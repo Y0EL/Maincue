@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn } from "./Common";
+import { useModal } from "./ModalProvider";
 
 const API_URL = "http://localhost:8000";
 
@@ -15,9 +16,20 @@ export default function BookingsTab({ userId }: { userId: number }) {
   const [loading, setLoading] = useState(false);
   const [paymentData, setPaymentData] = useState<any>(null);
   const [successStatus, setSuccessStatus] = useState(false);
+  const [updateTick, setUpdateTick] = useState(0); // Trigger for WS updates
+  const { showModal } = useModal();
 
   useEffect(() => {
     fetchTables();
+
+    const ws = new WebSocket("ws://localhost:8000/ws");
+    ws.onmessage = (event) => {
+      if (event.data === "tables_updated") {
+        fetchTables();
+        setUpdateTick(prev => prev + 1); // Signal components to check their status safely
+      }
+    };
+    return () => ws.close();
   }, []);
 
   const fetchTables = async () => {
@@ -30,14 +42,13 @@ export default function BookingsTab({ userId }: { userId: number }) {
     }
   };
 
+  // Replace setInterval polling with WebSocket-triggered check
   useEffect(() => {
-    let interval: any;
     if (paymentData && !successStatus) {
-      interval = setInterval(async () => {
-        try {
-          const res = await fetch(`${API_URL}/booking/${paymentData.booking_id}`);
-          const data = await res.json();
-          if (data.status === "SUCCESS") {
+      fetch(`${API_URL}/booking/${paymentData.booking_id}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.status === "PAID") {
             setSuccessStatus(true);
             setPaymentData(null);
             setTimeout(() => {
@@ -45,22 +56,30 @@ export default function BookingsTab({ userId }: { userId: number }) {
               setSelectedTable(null);
             }, 5000);
           }
-        } catch(e) {}
-      }, 3000);
+        })
+        .catch(e => console.error("Payment check error", e));
     }
-    return () => clearInterval(interval);
-  }, [paymentData, successStatus]);
+  }, [paymentData, successStatus, updateTick]);
 
   const cost = duration * 45000;
 
   const handleBook = async () => {
-    if (!selectedTable) return alert("Select a table first.");
+    if (!selectedTable) {
+        showModal({ title: "Table Required", message: "Please select a table to proceed.", type: "info" });
+        return;
+    }
     setLoading(true);
     
     try {
+      const userStr = localStorage.getItem("billiard_user");
+      const token = userStr ? JSON.parse(userStr).token : "";
+
       const res = await fetch(`${API_URL}/book`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
         body: JSON.stringify({
           user_id: userId,
           table_id: selectedTable,
@@ -70,6 +89,12 @@ export default function BookingsTab({ userId }: { userId: number }) {
       });
       if (!res.ok) {
         setLoading(false);
+        const errData = await res.json();
+        showModal({
+            title: "Booking Failed",
+            message: errData.detail || "Unable to process your reservation.",
+            type: "error"
+        });
         return;
       }
       const data = await res.json();
@@ -77,18 +102,25 @@ export default function BookingsTab({ userId }: { userId: number }) {
       setLoading(false);
     } catch(e) {
       setLoading(false);
+      showModal({
+          title: "Connection Error",
+          message: "Please check your network and try again.",
+          type: "error"
+      });
     }
   };
 
   if (successStatus) {
     return (
       <div className="flex flex-col items-center justify-center pt-32 pb-10 h-full text-center space-y-6">
-        <div className="w-16 h-16 border border-[#2A2421] text-[#2A2421] rounded-full flex items-center justify-center opacity-80">
+        <div className="w-16 h-16 border border-[#2A2421] bg-[#2A2421] text-[#D4C4B7] shadow-xl premium-shadow rounded-full flex items-center justify-center mx-auto mb-4">
             <span className="text-2xl font-light">✓</span>
         </div>
         <div>
-          <h2 className="text-3xl font-light text-[#2A2421] tracking-tight mb-2">Confirmed</h2>
-          <p className="text-xs text-[#8B8580] uppercase tracking-[0.2em]">Table No. {selectedTable} is ready.</p>
+          <h2 className="text-3xl font-light text-[#2A2421] tracking-tight mb-4">Payment Success</h2>
+          <p className="text-xs text-[#8B8580] uppercase tracking-[0.2em] leading-relaxed">
+             Go to <strong className="text-[#8B7355]">Home Tab</strong> to view your Ticket & QR Code.
+          </p>
         </div>
       </div>
     );

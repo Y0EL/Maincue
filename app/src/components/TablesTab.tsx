@@ -37,6 +37,14 @@ export default function TablesTab() {
     const cached = localStorage.getItem("maincue_tables");
     if (cached) setTables(JSON.parse(cached));
     fetchTables();
+
+    const ws = new WebSocket("ws://localhost:8000/ws");
+    ws.onmessage = (event) => {
+      if (event.data === "tables_updated") {
+        fetchTables();
+      }
+    };
+    return () => ws.close();
   }, []);
 
   return (
