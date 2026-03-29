@@ -69,6 +69,14 @@ def init_db():
         c.execute("ALTER TABLE users ADD COLUMN email TEXT")
     except sqlite3.OperationalError:
         pass
+    try:
+        c.execute("ALTER TABLE users ADD COLUMN phone TEXT")
+    except sqlite3.OperationalError:
+        pass
+    try:
+        c.execute("ALTER TABLE users ADD COLUMN address TEXT")
+    except sqlite3.OperationalError:
+        pass
 
     c.execute('''CREATE TABLE IF NOT EXISTS tables (id INTEGER PRIMARY KEY, type TEXT, status TEXT, active_until TEXT, active_user_id INTEGER)''')
     c.execute('''CREATE TABLE IF NOT EXISTS bookings (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, table_id INTEGER, status TEXT, duration INTEGER, cost INTEGER, qr_string TEXT, reference_id TEXT)''')
@@ -169,6 +177,11 @@ class LoginRequest(BaseModel):
     token: str
     name: str
     email: Optional[str] = None
+
+class UserUpdateRequest(BaseModel):
+    name: str
+    phone: Optional[str] = None
+    address: Optional[str] = None
 
 class AdminLoginRequest(BaseModel):
     username: str
@@ -315,9 +328,29 @@ def get_user(user_id: int, auth_user_id: int = Depends(verify_token)):
     # Kumpulkan tiket pending (yang belum discan)
     c.execute("SELECT id, table_id, duration, verification_code FROM bookings WHERE user_id = ? AND status = 'PAID' AND is_verified = 0 ORDER BY id DESC", (user_id,))
     res["pending_tickets"] = [dict(row) for row in c.fetchall()]
+
+    # Kumpulkan riwayat lengkap dan hitung total spent
+    c.execute("SELECT table_id, duration, cost, status, is_verified FROM bookings WHERE user_id = ? AND status = 'PAID' ORDER BY id DESC", (user_id,))
+    history = [dict(row) for row in c.fetchall()]
+    res["history"] = history
+    
+    total_spent = sum(item["cost"] for item in history)
+    res["total_spent"] = total_spent
         
     conn.close()
     return res
+
+@app.put("/user/{user_id}")
+def update_user(user_id: int, req: UserUpdateRequest, auth_user_id: int = Depends(verify_token)):
+    if user_id != auth_user_id:
+        raise HTTPException(status_code=403, detail="Akses ditolak (Token tidak sesuai)")
+        
+    conn = get_db()
+    c = conn.cursor()
+    c.execute("UPDATE users SET name = ?, phone = ?, address = ? WHERE id = ?", (req.name, req.phone, req.address, user_id))
+    conn.commit()
+    conn.close()
+    return {"success": True, "message": "Profil berhasil diperbarui"}
 
 @app.get("/tables")
 async def get_tables():

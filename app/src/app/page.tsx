@@ -25,10 +25,13 @@ export default function App() {
 
   useEffect(() => {
     setMounted(true);
-    const saved = localStorage.getItem("billiard_user");
-    if (saved) {
-      setCurrentUser(JSON.parse(saved));
-    }
+    const loadUser = () => {
+      const saved = localStorage.getItem("billiard_user");
+      if (saved) setCurrentUser(JSON.parse(saved));
+    };
+    loadUser();
+    window.addEventListener("userUpdated", loadUser);
+    return () => window.removeEventListener("userUpdated", loadUser);
   }, []);
 
   const [loginLoading, setLoginLoading] = useState(false);
